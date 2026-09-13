@@ -1550,7 +1550,8 @@ async function loadLeaderboard() {
     }
 
     const pageSize = 10;
-    const totalPages = Math.max(1, Math.ceil(leaderboardData.length / pageSize));
+    const totalPlayers = Number(data.total_players || leaderboardData.length);
+    const totalPages = Math.max(1, Math.ceil(totalPlayers / pageSize));
     const playerRank = Number(data.my_rank || currentPlayer?.rank || 0);
 
     if (playerRank > 0) currentPlayer.rank = playerRank;
@@ -1620,7 +1621,8 @@ async function loadLeaderboardPage(page) {
   try {
     const { data, error } = await supabaseClient.rpc("get_leaderboard", {
       p_session_token: sessionToken,
-      p_page: Number(page)
+      p_page: Number(page),
+      p_page_size: 10
     });
     if (error) throw error;
     if (!data?.success) throw new Error(data?.message || "تعذر تحميل الترتيب.");
