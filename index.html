@@ -361,6 +361,26 @@
     .prediction-btn { padding: 11px 5px; }
     .risk-btn { padding: 10px 4px; }
 
+    .match-multiplier {
+      color: #d9b65c;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .match-multiplier-help {
+      background: #102843;
+      border: 1px solid #31506f;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      color: #c5ced9;
+      font-size: 12px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .match-multiplier-help strong { color: #d9b65c; }
+
     .prediction-btn.selected,
     .risk-btn.selected {
       background: #d9b65c;
@@ -655,7 +675,7 @@
 <div class="container">
 
   <div class="header">
-    <div class="brand">🎯SAM AIM</div>
+    <div class="brand">🎯 SAM AIM</div>
     <div class="subtitle">توقع • نافس • تصدّر</div>
   </div>
 
@@ -1160,16 +1180,6 @@ async function loadCompetition() {
     const sessionToken = localStorage.getItem(SESSION_KEY);
     if (!sessionToken) throw new Error("انتهت جلسة الدخول. يرجى تسجيل الدخول من جديد.");
 
-    /*
-      Expected secure RPC response:
-      {
-        success, phase: {key,name,prize,end_date}, risk_balance,
-        phase_points, correct_predictions, rank,
-        matches: [...], predictions: [...],
-        announcement: {text} | null,
-        champion: {phase_name,username,points} | null
-      }
-    */
     const { data, error } = await supabaseClient.rpc("get_player_dashboard", {
       p_session_token: sessionToken
     });
@@ -1358,18 +1368,24 @@ function createMatchCard(match) {
     <div class="prediction-buttons">
       <button class="prediction-btn ${existing.outcome === "home" ? "selected" : ""}"
         onclick="selectPrediction(${match.id}, 'home')" ${isLocked ? "disabled" : ""}>
-        ${escapeHtml(match.home_team)}
+        ${escapeHtml(match.home_team)} <span class="match-multiplier">×${formatMultiplier(match.home_multiplier)}</span>
       </button>
 
       <button class="prediction-btn ${existing.outcome === "draw" ? "selected" : ""}"
         onclick="selectPrediction(${match.id}, 'draw')" ${isLocked ? "disabled" : ""}>
-        تعادل
+        تعادل <span class="match-multiplier">×${formatMultiplier(match.draw_multiplier)}</span>
       </button>
 
       <button class="prediction-btn ${existing.outcome === "away" ? "selected" : ""}"
         onclick="selectPrediction(${match.id}, 'away')" ${isLocked ? "disabled" : ""}>
-        ${escapeHtml(match.away_team)}
+        ${escapeHtml(match.away_team)} <span class="match-multiplier">×${formatMultiplier(match.away_multiplier)}</span>
       </button>
+    </div>
+
+    <div class="match-multiplier-help">
+      <strong>💡 معامل المباراة</strong><br>
+      الرقم بجانب التوقع يحدد مضاعف النقاط.<br>
+      <strong>مثال: ×2 تضاعف النقاط، ×1.5 تضاعفها مرة ونصف.</strong>
     </div>
 
     <div class="section-label">نقاط المخاطرة</div>
@@ -1393,6 +1409,12 @@ function createMatchCard(match) {
   `;
 
   return card;
+}
+
+function formatMultiplier(value) {
+  const n = Number(value ?? 1);
+  if (!Number.isFinite(n)) return "1";
+  return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2)));
 }
 
 function refreshMatchCard() {
